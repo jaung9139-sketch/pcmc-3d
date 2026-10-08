@@ -1196,7 +1196,7 @@ canvas.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return; con
 // 카메라
 // =====================================================================
 const VIEWS={iso:[3300,2200,4200],front:[0,1250,5600],left:[-5200,1500,900],right:[5200,1500,900],back:[600,1500,-5300]};
-function setView(k){const v=VIEWS[k]||VIEWS.iso; camera.position.set(...v); controls.target.set(0,880,0); controls.update();
+function setView(k){const v=VIEWS[k]||VIEWS.iso; const asp=innerWidth/innerHeight, f=asp<1?Math.min(2.2,1.15/asp):1; camera.position.set(v[0]*f,880+(v[1]-880)*f,v[2]*f); controls.target.set(0,880,0); controls.update();
   document.querySelectorAll('#views .btn').forEach(b=>b.classList.toggle('on',b.dataset.v===k));}
 document.querySelectorAll('#views .btn').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 setCathodeCable(q.get('cable')==='RF'?'RF':'DC',true); drawScreens(); renderScreen();
