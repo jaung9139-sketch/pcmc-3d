@@ -718,8 +718,6 @@ const lwL=lowerDoor(X_L+44,BAY_CX-8,X_L+44,'lower_left'), lwR=lowerDoor(BAY_CX+8
  // 공압 매니폴드 (앞쪽 바닥, Ion / Sputter)
  box(220,60,90,steel,px-240,py+60,pz+230,frame,'pneumatic_manifold'); for(let i=0;i<4;i++) cyl(8,40,M(0xb8860b,{metalness:.6}),px-320+i*50,py+110,pz+230,'y',frame,'pneumatic_manifold');
  box(60,40,30,M(0xf0f0f0),px-370,py+60,pz+230,frame,'pneumatic_manifold');
- // 단자대 (뒷벽)
- box(200,40,20,M(0xeeeeee),px+60,py+520,lb.z0+26,frame,'frame');
  // 공압 튜브(파랑) 매니폴드 → 위
  for(const dx of [-320,-270,-220]) cyl(4,Y_SPLIT-(py+130),M(0x2f7fd6),px+dx,(Y_SPLIT+py+130)/2,pz+230,'y',frame,'pneumatic_manifold');
 }
