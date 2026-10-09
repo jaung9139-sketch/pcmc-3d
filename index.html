@@ -101,7 +101,7 @@
   .ps .av{cursor:pointer;width:22px;height:18px;background:#8b93a0;clip-path:polygon(0 0,100% 100%,100% 0,0 100%)}.ps .av.open{background:#2ecc71}
   .ps .valve{cursor:pointer;color:#ddd;font-size:22px;line-height:1;text-align:center;background:#1a3a6a;border-radius:3px}.ps .valve.open{color:#2ecc71}
   .ps .lbl{font-size:9px;color:#9fd;text-align:center;white-space:nowrap}
-  .ps .chamber{background:transparent;border:0;text-align:center;font:bold 16px Arial;color:transparent;padding-top:14px}  .ps .chamber.plasma{background:linear-gradient(90deg,#8a2be2,#c050ff 60%,#8a2be2);color:#f8d7ff;border-radius:4px;opacity:.9}
+  .ps .chamber{background:transparent;border:0;text-align:center;font:bold 16px Arial;color:transparent;padding-top:14px}  .ps .chamber.plasma{background:linear-gradient(90deg,#c22fb0,#f544e6 60%,#c22fb0);color:#fff;border-radius:4px;opacity:.92}   /* 실습 사진 10.27 DC ON 화면 자홍 */
 .ps .chamber.atm{background:linear-gradient(90deg,#1b4fbf,#3a7bff 60%,#1b4fbf);color:#fff;text-shadow:0 0 4px #000;border-radius:4px}
   .ps .door{background:#000;color:#2ecc71;font:bold 11px/1 Arial;border:1px solid #2ecc71;text-align:center;padding:2px 0}
   .ps .turbo{background:linear-gradient(#5bc0ff,#1b4fbf 50%,#ff6b35 55%,#ffd34d);border:2px solid #ccc;border-radius:4px}.ps .turbo.on{box-shadow:0 0 14px 4px #4fc3ff;border-color:#4fc3ff}
@@ -771,8 +771,8 @@ const psImg=new Image(), psCv=document.createElement('canvas'); psCv.width=1024;
 const psTex=new THREE.CanvasTexture(psCv); psTex.colorSpace=THREE.SRGBColorSpace;
 function drawMonTex(){ if(!psImg.naturalWidth)return; psCtx.drawImage(psImg,0,0,1024,768);   // 3D 모니터도 확대 화면과 같은 챔버 색
   const atm=pressureKey==='ATM', pl=!atm&&(dcOn||(rfOn&&shutterK<0.5)||hvOn);
-  if(atm||pl){ const c=atm?['#1b4fbf','#3a7bff']:['#8a2be2','#c050ff'], gr=psCtx.createLinearGradient(471,0,725,0); gr.addColorStop(0,c[0]); gr.addColorStop(.6,c[1]); gr.addColorStop(1,c[0]);
-    psCtx.globalAlpha=atm?1:.9; psCtx.fillStyle=gr; psCtx.fillRect(471,326,254,112); psCtx.globalAlpha=1; psCtx.fillStyle=atm?'#fff':'#f8d7ff'; psCtx.font='bold 16px Arial'; psCtx.textAlign='center'; psCtx.fillText(atm?'ATM':'VACUUM',598,362); psCtx.textAlign='left'; }
+  if(atm||pl){ const c=atm?['#1b4fbf','#3a7bff']:['#c22fb0','#f544e6'], gr=psCtx.createLinearGradient(471,0,725,0); gr.addColorStop(0,c[0]); gr.addColorStop(.6,c[1]); gr.addColorStop(1,c[0]);
+    psCtx.globalAlpha=atm?1:.92; psCtx.fillStyle=gr; psCtx.fillRect(471,326,254,112); psCtx.globalAlpha=1; psCtx.fillStyle='#fff'; psCtx.font='bold 16px Arial'; psCtx.textAlign='center'; psCtx.fillText(atm?'ATM':'VACUUM',598,362); psCtx.textAlign='left'; }
   psTex.needsUpdate=true; }
 psImg.onload=drawMonTex; psImg.src='ui/psbg.jpg'; window.__drawMonTex=drawMonTex; const monOnMat=new THREE.MeshBasicMaterial({map:psTex}), monOffMat=new THREE.MeshStandardMaterial({color:0x0a0d14,roughness:.25,metalness:.3});
 const monMesh=box(380,300,4,monOffMat,(rk.x0+rk.x1)/2,1296,Z_F-52,rackIn,'control_panel');   // 화면: 꺼짐 → 전원 켜면 Process Screen
