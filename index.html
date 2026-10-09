@@ -77,6 +77,7 @@
   #monzoom .bar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#141821;color:#e8ecf2;font-size:13px}
   #monzoom .bar .btn{background:#262c3a;color:#e8ecf2;border-color:#3a4256}
   #monzoom .bar .sp{flex:1;text-align:center;font-weight:700}
+#monzoom .bar .mzpv{font-family:ui-monospace,Consolas,monospace;color:#ffd34d;white-space:nowrap}
   #monzoom .scr{flex:1;display:grid;place-items:center;overflow:hidden}
   #monzoom video{max-width:100%;max-height:100%;background:#000}
   #monzoom .off{color:#9aa3b5;font-size:15px;text-align:center;line-height:1.6}
@@ -208,7 +209,7 @@
   <div class="row" id="sccmSel"><button data-v="5">5</button><button data-v="10">10</button><button data-v="15">15</button><button data-v="20">20</button><span style="align-self:center;font-size:12px;color:var(--muted)">sccm (MFC 50 sccm × 3채널)</span></div>
   <div class="row" style="justify-content:flex-end"><button id="gasCancel">취소</button><button id="gasOk" style="font-weight:700">입력</button></div>
 </div></div>
-<div id="monzoom"><div class="bar"><button class="btn" id="mzBack">◀ 축소 (3D로)</button><span class="sp">제어부 터치 모니터 — Process Screen</span><span id="mzHint" style="font-size:12px;color:#9aa3b5"></span></div>
+<div id="monzoom"><div class="bar"><span id="mzPv" class="mzpv"></span><button class="btn" id="mzBack">◀ 축소 (3D로)</button><span class="sp">제어부 터치 모니터 — Process Screen</span><span id="mzHint" style="font-size:12px;color:#9aa3b5"></span></div>
   <div class="scr" id="mzScr"><div id="ps" class="ps">
     <!-- Cathode / Anode Information -->
     <div class="o val" id="ciP" style="left:812px;top:67px;width:60px;height:16px;line-height:16px">0 W</div><div class="o val y" id="ciV" style="left:812px;top:86px;width:60px;height:16px;line-height:16px">0 V</div><div class="o val c" id="ciI" style="left:812px;top:106px;width:60px;height:16px;line-height:16px">2 mA</div><span class="dot" id="ciOn" style="left:836px;top:126px"></span>
@@ -1117,6 +1118,7 @@ tzcv.onclick=(e)=>{ const r=tzcv.getBoundingClientRect(); const x=(e.clientX-r.l
 document.getElementById('tzStart').onclick=()=>{ if(turboRpm>0){toast('이미 기동 중');return;} if(!rotaryOn){toast('로터리 펌프를 먼저 켭니다');return;} setValve('foreline_valve',true); setFlow('fore',true); setTurbo(33600,FAST?500:14000); later(()=>{setValve('foreline_valve',false);setFlow('fore',false);},FAST?100:2500); if(guideOn&&GUIDE[gi]&&GUIDE[gi].target==='turbo_ctrl')guideAdvance(); };
 const HL={rotary_pump:'rotIc',roughing_valve:'vRough',foreline_valve:'vFore',gate_valve:'vGate',throttle_valve:'vThr',vent_valve:'ventV',shutter:'shcC',dc_sputter_ps:'cpPwr',rf_ps:'cpPwr',anode_ps:'apPwr',substrate_stage:'chRun',control_panel:'mfcAr',geissler_tube:'gtOn'};
 function hlTarget(){ document.querySelectorAll('#ps .hl').forEach(e=>e.classList.remove('hl')); if(guideOn&&GUIDE[gi]&&GUIDE[gi].target){ let id=HL[GUIDE[gi].target]; if(GUIDE[gi].target==='control_panel'&&/Chuck/.test(GUIDE[gi].t))id='chSv'; if(GUIDE[gi].target==='control_panel'&&/차단/.test(GUIDE[gi].t))id='avAr'; if(GUIDE[gi].target==='shutter'&&shutterK>0.5)id='shcO'; const el=id&&document.getElementById(id); if(el)el.classList.add('hl'); } }
+{const pv=document.getElementById('pv'), mz=document.getElementById('mzPv'); const f=()=>mz.textContent='챔버 '+pv.textContent; f(); new MutationObserver(f).observe(pv,{childList:true,characterData:true,subtree:true});}   // 확대 화면 왼쪽 위 현재 압력
 function openMonitor(){ monzoom.classList.add('show'); fitPS(); renderScreen(); hlTarget(); document.getElementById('mzHint').textContent=screenOn?'밸브·셔터·전원·MFC를 터치해 조작':'전원이 꺼져 있습니다 — 제어부 전원 버튼(초록)을 먼저'; }
 function closeMonitor(){ monzoom.classList.remove('show'); }
 const gzoom=document.getElementById('gzoom'), gzvid=document.getElementById('gzvid');
@@ -1154,7 +1156,7 @@ function select(part,focus=true){
   if(part==='control_panel'){ openMonitor(); const g=guideOn&&GUIDE[gi]; if(g&&g.target==='control_panel'&&g.need&&!g.need())toast(g.needMsg); return; }
   if(guideOn&&part&&GUIDE[gi]&&GUIDE[gi].target){ const g=GUIDE[gi]; const hit=part===g.target||(g.alt||[]).includes(part); if(hit&&SCREEN_OPS.has(g.target)&&part!=='control_panel'){ toast('실제 장비에서는 모니터로 조작합니다 — 모니터를 엽니다'); openMonitor(); return; } if(hit){ guideTap(part); if(part==='geissler_tube'){ openGeissler(gas||'ar'); guideAdvance(); } return; } else { guideTap(part); } }
   else if(part==='turbo_ctrl'){ openTurbo(); }
-  else if(part==='emo'&&!screenOn){ setScreen(true); toast('전원 ON — 모니터가 켜졌습니다'); }
+  else if(part==='emo'){ if(!screenOn){ setScreen(true); toast('전원 ON — 모니터가 켜졌습니다'); } else toast('전원이 켜져 있습니다 — 모니터를 누르면 크게 봅니다'); }
   if(selected)setGlow(selected,false); selected=part;
   document.querySelectorAll('#parts button').forEach(b=>b.classList.toggle('on',b.dataset.p===part));
   xray(!!part&&PARTS[part].grp==='챔버 내부');
