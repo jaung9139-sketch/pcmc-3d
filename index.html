@@ -17,7 +17,7 @@
   #hud p{margin:0;font-size:11px;color:var(--muted)}
   .bar{position:fixed;display:flex;gap:6px;flex-wrap:wrap}
   #actions{right:12px;top:12px;justify-content:flex-end;max-width:52vw}
-  #views{right:12px;bottom:12px;justify-content:flex-end}   /* 위 동작 버튼이 두 줄이 돼도 겹치지 않게 아래로 */
+  #views{right:12px;top:92px;justify-content:flex-end}   /* 동작 버튼이 두 줄(원위치)이어도 겹치지 않게 */
   .btn{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:7px 11px;border-radius:9px;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.12);cursor:pointer;white-space:nowrap}
   .btn.on{outline:2px solid var(--yel);outline-offset:-1px}
   .btn.act{font-weight:700}
@@ -109,7 +109,6 @@
   .ps .hot{cursor:pointer}
   .ps .hl{outline:3px solid #ffd34d;outline-offset:2px;animation:blink 1s infinite;z-index:3}
   @keyframes blink{50%{outline-color:transparent}}
-  #actions .btn.hl{outline:3px solid #ffd34d;outline-offset:2px;animation:blink 1s infinite}
   #keypad{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center}#keypad.show{display:flex}#keypad .kp{background:#eef0f3;color:#222;border-radius:8px;padding:12px;width:260px;box-shadow:0 10px 40px rgba(0,0,0,.5)}#keypad .kdisp{background:#fff;border:1px solid #999;font:bold 24px monospace;text-align:right;padding:6px 10px;margin-bottom:8px}#keypad .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}#keypad .keys b{background:#fff;border:1px solid #aaa;border-radius:4px;text-align:center;font:bold 20px Arial;padding:8px 0;cursor:pointer}#keypad .krow{display:flex;gap:6px;margin-top:8px}#keypad .kb{flex:1;text-align:center;background:#fff;border:1px solid #aaa;border-radius:4px;padding:8px 0;cursor:pointer;font-weight:700}#keypad .kb.ok{background:#2f7fd6;color:#fff}
   #gasin{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;place-items:center;z-index:9}
   #gasin.show{display:grid}
@@ -180,7 +179,6 @@
   <button class="btn act" data-a="process">공정 시연</button>
   <button class="btn act" data-a="vent">진공 파기</button>
   <button class="btn act" data-a="guide">운전 따라하기</button>
-  <button class="btn act" data-a="geissler">가이슬러 튜브</button>
   <button class="btn act on" data-a="info">설명</button>
   <button class="btn act" data-a="reset">원위치</button>
 </div>
@@ -758,7 +756,7 @@ function drawScreens(){
   g.fillStyle='#e8ecf2'; g.font='14px sans-serif'; g.fillText('Anode  +DC',16,310); g.font='bold 16px monospace'; g.fillStyle=hvOn?'#2ecc71':'#9fb3d9'; g.fillText(hvOn?'1500 V  25 mA':'0 V  0 mA',16,332);
   g.fillStyle='#e8ecf2'; g.font='14px sans-serif'; g.fillText('Shutter',300,250); g.font='bold 16px monospace'; g.fillStyle='#ffd34d'; g.fillText(shutterK>0.5?'CLOSE':'OPEN',300,272);
   g.fillStyle='#e8ecf2'; g.font='14px sans-serif'; g.fillText('MFC  Ar',300,310); g.font='bold 16px monospace'; g.fillStyle=(dcOn||rfOn||hvOn)?'#2ecc71':'#9fb3d9'; g.fillText(window.__mfc||'0 sccm',300,332);
-  SCR.mon.tex.needsUpdate=true;
+  SCR.mon.tex.needsUpdate=true; if(window.__drawMonTex)window.__drawMonTex();
   if(typeof drawFaces==='function'&&FACE.turbo_ctrl)drawFaces(); if(typeof renderScreen==='function'&&typeof monzoom!=='undefined'&&monzoom.classList.contains('show'))renderScreen();
   {const {ctx:g,c}=SCR.tc; g.fillStyle='#101418'; g.fillRect(0,0,c.width,c.height); g.fillStyle='#8fe3a0'; g.font='bold 30px monospace'; g.fillText(String(Math.round(turboRpm)).padStart(5,'0')+' rpm',14,44); g.font='16px monospace'; g.fillText(turboRpm>=33600?'NORMAL':turboRpm>0?'ACCEL':'STOP',14,78); g.fillStyle='#9aa'; g.font='12px sans-serif'; g.fillText('TC1103',190,80); SCR.tc.tex.needsUpdate=true;}
   {const {ctx:g,c}=SCR.dc; g.fillStyle='#180000'; g.fillRect(0,0,c.width,c.height); g.fillStyle='#ff3b3b'; g.font='bold 26px monospace'; g.fillText(dcOn?'0200w 0451v':'0000w 0000v',10,40); g.fillText(dcOn?'0449mA':'0000mA',10,78); SCR.dc.tex.needsUpdate=true;}
@@ -768,7 +766,14 @@ const rackIn=mover([0,0,300]);
 // ---- 모니터 (베젤 직접) ----
 box(450,352,30,black,(rk.x0+rk.x1)/2,1300,Z_F-70,rackIn,'control_panel');
 box(430,332,2,M(0x2a2e36,{roughness:.6}),(rk.x0+rk.x1)/2,1300,Z_F-54,rackIn,'control_panel');
-const psTex=new THREE.TextureLoader().load('ui/psbg.jpg'); psTex.colorSpace=THREE.SRGBColorSpace; const monOnMat=new THREE.MeshBasicMaterial({map:psTex}), monOffMat=new THREE.MeshStandardMaterial({color:0x0a0d14,roughness:.25,metalness:.3});
+const psImg=new Image(), psCv=document.createElement('canvas'); psCv.width=1024; psCv.height=768; const psCtx=psCv.getContext('2d');
+const psTex=new THREE.CanvasTexture(psCv); psTex.colorSpace=THREE.SRGBColorSpace;
+function drawMonTex(){ if(!psImg.naturalWidth)return; psCtx.drawImage(psImg,0,0,1024,768);   // 3D 모니터도 확대 화면과 같은 챔버 색
+  const atm=pressureKey==='ATM', pl=!atm&&(dcOn||(rfOn&&shutterK<0.5)||hvOn);
+  if(atm||pl){ const c=atm?['#1b4fbf','#3a7bff']:['#8a2be2','#c050ff'], gr=psCtx.createLinearGradient(471,0,725,0); gr.addColorStop(0,c[0]); gr.addColorStop(.6,c[1]); gr.addColorStop(1,c[0]);
+    psCtx.globalAlpha=atm?1:.9; psCtx.fillStyle=gr; psCtx.fillRect(471,326,254,112); psCtx.globalAlpha=1; psCtx.fillStyle=atm?'#fff':'#f8d7ff'; psCtx.font='bold 16px Arial'; psCtx.textAlign='center'; psCtx.fillText(atm?'ATM':'VACUUM',598,362); psCtx.textAlign='left'; }
+  psTex.needsUpdate=true; }
+psImg.onload=drawMonTex; psImg.src='ui/psbg.jpg'; window.__drawMonTex=drawMonTex; const monOnMat=new THREE.MeshBasicMaterial({map:psTex}), monOffMat=new THREE.MeshStandardMaterial({color:0x0a0d14,roughness:.25,metalness:.3});
 const monMesh=box(380,300,4,monOffMat,(rk.x0+rk.x1)/2,1296,Z_F-52,rackIn,'control_panel');   // 화면: 꺼짐 → 전원 켜면 Process Screen
 let screenOn=false; function setScreen(on){screenOn=on; monMesh.material=on?monOnMat:monOffMat; drawScreens(); if(window.renderScreen)renderScreen();}
 // ---- 랙 유닛 앞면: 캔버스로 직접 그림 (사진 20260317_082300 배치 기준) ----
@@ -883,7 +888,7 @@ function setDoor(v,now){setOpen('chamber_door',v,now);}
 function setCover(v,now){for(const k of COVERS)setOpen(k,v,now);}
 function applyExplode(k){expK=k; const hide=k>0.5; for(const g of [frontCover,leftMove,backMove,rackDoorMove,lowerMove,sideMove,doorMove,roof]) g.visible=!hide; }
 function setExplode(v,now){state.explode=v; applyExplode(v?1:0); syncBtns();}
-function syncBtns(){ if(typeof gtHl==='function')gtHl();const st={door:isDoorOpen(),cover:COVERS.every(k=>OPEN[k].open),explode:state.explode,guide:guideOn&&GUIDE===GUIDES.full,pump:guideOn&&GUIDE===GUIDES.pump,process:guideOn&&GUIDE===GUIDES.process,vent:guideOn&&GUIDE===GUIDES.vent}; document.querySelectorAll('#actions .btn').forEach(b=>{const a=b.dataset.a; if(a in st)b.classList.toggle('on',st[a]);});}
+function syncBtns(){const st={door:isDoorOpen(),cover:COVERS.every(k=>OPEN[k].open),explode:state.explode,guide:guideOn&&GUIDE===GUIDES.full,pump:guideOn&&GUIDE===GUIDES.pump,process:guideOn&&GUIDE===GUIDES.process,vent:guideOn&&GUIDE===GUIDES.vent}; document.querySelectorAll('#actions .btn').forEach(b=>{const a=b.dataset.a; if(a in st)b.classList.toggle('on',st[a]);});}
 // ---- 압력 · 순서(배기 / 진공 파기 / 공정) ----
 let pressure='HIGH', pressureKey='HIGH'; let rotaryOn=false, chuckSv=0, tAtm=null, tGv=null; const PSV={ar:0,n2:0,o2:0}, AV={ar:false,n2:false,o2:false,av4:false}; let purgeOpen=false;                       // ATM | ROUGH | HIGH — 처음은 고진공 유지 상태
 const GAS={ar:{n:'Ar',c:0x9b6bff,t:'보라'},n2:{n:'N₂',c:0xff7fc0,t:'분홍·보라'},o2:{n:'O₂',c:0xfff2c0,t:'흰·노랑'}};
@@ -958,7 +963,7 @@ GUIDES.full=[
  {t:'모니터 → Foreline 밸브 터치 → 열기 (터보 뒤를 로터리가 받침)',target:'foreline_valve',do:()=>{setValve('foreline_valve',true);setFlow('fore',true);}},
  {t:'터보 정속(33,600 rpm·램프) 확인 후 모니터 → Gate 밸브 터치 → OPEN → 고진공 5×10⁻⁶ Torr',target:'gate_valve',need:()=>turboRpm>=33599,needMsg:'터보가 아직 정속이 아닙니다 — 33,600 rpm이 되면 램프가 켜집니다',do:()=>{setValve('gate_valve',true);setValve('throttle_valve',true);later(()=>setPressure('HIGH'),FAST?100:2600);}},
  {t:'모니터 → MFC01 칸 터치 → 숫자판에 Ar 유량 입력 → OK (베이스 압력 도달 뒤에 가스, AV01 자동 열림)',target:'control_panel',need:()=>pressure==='HIGH',needMsg:'베이스 압력(5×10⁻⁶ Torr)에 도달한 뒤에 가스를 넣습니다',do:()=>{openMonitor();},wait:true},
- {t:'모니터 Geissler tube ON (또는 위 「가이슬러 튜브」 버튼 · 3D 튜브 터치) → 실제 영상이 크게 뜨고 가스에 따라 발광색이 바뀐다',target:'geissler_tube',do:()=>{},wait:true},
+ {t:'모니터 Geissler tube ON (또는 3D 튜브 터치) → 실제 영상이 크게 뜨고 가스에 따라 발광색이 바뀐다',target:'geissler_tube',do:()=>{},wait:true},
  {t:'끝. 「진공 파기」 버튼으로 공기를 넣고 도어를 연다',target:null},
 ];
 GUIDE=GUIDES.full;
@@ -981,6 +986,7 @@ GUIDES.process=[
  {t:'가스 차단 — 모니터 AV01 터치 → 닫기 (MFC 0)',target:'control_panel',do:()=>{AV.ar=AV.av4=false;PSV.ar=0;afterGas();}},
  {t:'모니터 Throttle 밸브 터치 → 100% 열어 잔류 가스 배기 → 베이스 압력',target:'throttle_valve',do:()=>{setValve('throttle_valve',true);setPressure('HIGH');}},
  {t:'끝 — 시료를 꺼내려면 「진공 파기」',target:null}];
+GUIDES.full.splice(GUIDES.full.length-1,0,...[1,3,4,5,6,7].map(i=>GUIDES.process[i]));   // 가이슬러 뒤에 플라즈마 점화·증착·끄기
 GUIDES.vent=[
  {t:'모니터에서 전원 OFF 확인 (DC·RF·+DC 모두 OFF, RF는 0으로 내린 뒤)',target:'control_panel',alt:['dc_sputter_ps','rf_ps','anode_ps'],do:()=>{setPlasma(false);rfOn=false;hvOn=false;setPlasma2(false);}},
  {t:'가스 차단 — 모니터 AV 전부 닫기',target:'control_panel',do:()=>{AV.ar=AV.n2=AV.o2=AV.av4=false;PSV.ar=PSV.n2=PSV.o2=0;afterGas();}},
@@ -991,11 +997,12 @@ GUIDES.vent=[
  {t:'ATM 표시 확인 → 모니터 VENT 다시 터치 → 닫기',target:'vent_valve',need:()=>pressureKey==='ATM',needMsg:'아직 대기압이 아닙니다',do:()=>{setValve('vent_valve',false);setFlow('vent',false);}},
  {t:'도어 열기 — 시료 회수',target:'chamber_door',do:()=>setDoor(true)},
  {t:'끝',target:null}];
-function gtHl(){ const b=document.querySelector('#actions .btn[data-a="geissler"]'); if(b)b.classList.toggle('hl',!!(guideOn&&GUIDE[gi]&&GUIDE[gi].target==='geissler_tube')); }
-function guideRender(){ gtHl(); if(!guideOn)return; stepsEl.classList.add('show'); document.getElementById('st').dataset.title=guideTitle; document.getElementById('st').textContent=stepsEl.classList.contains('min')?(guideTitle+' '+(gi+1)+'/'+GUIDE.length+' — '+GUIDE[gi].t.split('→')[0].trim()):guideTitle; document.getElementById('sp').textContent=document.getElementById('pv').textContent;
+function guideRender(){ if(!guideOn)return; stepsEl.classList.add('show'); document.getElementById('st').dataset.title=guideTitle; document.getElementById('st').textContent=stepsEl.classList.contains('min')?(guideTitle+' '+(gi+1)+'/'+GUIDE.length+' — '+GUIDE[gi].t.split('→')[0].trim()):guideTitle; document.getElementById('sp').textContent=document.getElementById('pv').textContent;
   const ol=document.getElementById('sl'); ol.innerHTML=GUIDE.map((g,k)=>`<li class="${k<gi?'done':k===gi?'now':''}">${g.t}</li>`).join('');
-  const old=stepsEl.querySelector('.gbtn'); if(old)old.remove(); const b=document.createElement('div'); b.className='gbtn'; b.style.cssText='margin-top:6px;display:flex;gap:6px'; b.innerHTML='<button class="btn" id="gauto">이 단계 자동으로</button><button class="btn" id="gall">'+(autoAll?'자동 정지':'자동')+'</button><button class="btn" id="gstop">그만</button>'; stepsEl.appendChild(b);
-  document.getElementById('gauto').onclick=()=>guideAuto(false); document.getElementById('gall').onclick=()=>{autoAll=!autoAll; guideRender(); if(autoAll)autoTick();}; document.getElementById('gstop').onclick=guideStop; }
+  const old=stepsEl.querySelector('.gbtn'); if(old)old.remove(); const b=document.createElement('div'); b.className='gbtn'; b.style.cssText='margin-top:6px;display:flex;gap:6px'; const fin=!GUIDE[gi].target&&(GUIDE===GUIDES.full||GUIDE===GUIDES.process);   // 끝 단계: 가이슬러 튜브 다시 보기
+  b.innerHTML=fin?'<button class="btn act" id="gGeis">공정 중 가이슬러 튜브 확인하기</button><button class="btn" id="gstop">그만</button>':'<button class="btn" id="gauto">이 단계 자동으로</button><button class="btn" id="gall">'+(autoAll?'자동 정지':'자동')+'</button><button class="btn" id="gstop">그만</button>'; stepsEl.appendChild(b);
+  if(fin){ document.getElementById('gGeis').onclick=()=>openGeissler(gas||'ar'); } else { document.getElementById('gauto').onclick=()=>guideAuto(false); document.getElementById('gall').onclick=()=>{autoAll=!autoAll; guideRender(); if(autoAll)autoTick();}; }
+  document.getElementById('gstop').onclick=guideStop; }
 let autoAll=false, autoT=null;
 function autoTick(){ clearTimeout(autoT); if(!autoAll||!guideOn)return; const g=GUIDE[gi]; if(!g||!g.target){autoAll=false; guideRender(); return;} if(g.need&&!g.need()){ autoT=setTimeout(autoTick,FAST?100:800); return; } guideAuto(false); autoT=setTimeout(autoTick,FAST?150:2600); }
 let guideTitle='운전 따라하기';
@@ -1011,11 +1018,11 @@ const SCREEN_OPS=new Set(['rotary_pump','roughing_valve','foreline_valve','gate_
 function guideTap(part){ const g=GUIDE[gi]; if(!g||!g.target)return false; const hit=part===g.target||(g.alt||[]).includes(part)||(part==='chuck'&&g.target==='substrate_stage'); if(!hit){ toast('다음 할 일: '+g.t); return false; }
   if(g.need&&!g.need()){ toast(g.needMsg); return true; } g.do(); if(!g.wait)guideAdvance(); return true; }
 function guideAuto(now){ const g=GUIDE[gi]; if(!g||!g.target)return; if(g.need&&!g.need()){ if(now){turboRpm=33600;setPressure(pressure);} else {toast(g.needMsg);return;} }
+  if(g.target==='control_panel'&&/차단|OFF 확인/.test(g.t)){ g.do(); guideAdvance(); return; }
+  if(g.target==='control_panel'&&/Chuck/.test(g.t)){ chuckSv=5; processOn=true; guideAdvance(); return; }
   if(g.target==='control_panel'){ PSV.ar=15; AV.ar=true; AV.av4=true; afterGas(); return; }
   if(g.target==='geissler_tube'){ if(!now&&!autoAll)openGeissler(gas||'ar'); else setGas(gas||'ar'); guideAdvance(); return; }
   if(g.target==='turbo_ctrl'){ if(!rotaryOn)rotaryOn=true; setValve('foreline_valve',true); setFlow('fore',true); turboRpm=0; setTurbo(33600,now?10:(FAST?500:9000)); later(()=>{setValve('foreline_valve',false);setFlow('fore',false);},FAST?100:2500); guideAdvance(); return; }
-  if(g.target==='control_panel'&&/차단|OFF 확인/.test(g.t)){ g.do(); guideAdvance(); return; }
-  if(g.target==='control_panel'&&/Chuck/.test(g.t)){ chuckSv=5; processOn=true; guideAdvance(); return; }
   g.do(); guideAdvance(); if(now){ tweens.length=0; if(g.target==='turbo_ctrl')turboRpm=33600; if(g.target==='roughing_valve'&&gi===4)setPressure('ROUGH'); if(g.target==='gate_valve')setPressure('HIGH'); } }
 // 가스 입력판
 // ---------- Process Screen (직접 제작) ----------
@@ -1129,7 +1136,6 @@ function setPlasma2(on){tween(plasma2Mat.opacity,on?.45:0,600,v=>plasma2Mat.opac
 document.getElementById('lightbox').onclick=()=>document.getElementById('lightbox').classList.remove('show');
 document.querySelectorAll('#actions .btn').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
   if(a==='info'){ infoOn=!infoOn; b.classList.toggle('on',infoOn); if(!infoOn)pop.classList.remove('show'); else if(selected)select(selected,false); return; }
-  if(a==='geissler'){ openGeissler(gas||'ar'); if(guideOn&&GUIDE[gi]&&GUIDE[gi].target==='geissler_tube'){ guideTap&&guideTap('geissler_tube'); guideAdvance(); } return; }
   if(a==='guide'){ guideOn?guideStop():guideStart('full'); return; }
   if(a==='pump'){ guideOn?guideStop():guideStart('pump'); return; }
   if(a==='process'){ guideOn?guideStop():guideStart('process'); return; }
