@@ -1009,8 +1009,10 @@ function guideRender(){ if(!guideOn)return; stepsEl.classList.add('show'); docum
 let autoAll=false, autoT=null;
 function autoTick(){ clearTimeout(autoT); if(!autoAll||!guideOn)return; const g=GUIDE[gi]; if(!g||!g.target){autoAll=false; guideRender(); return;} if(g.need&&!g.need()){ autoT=setTimeout(autoTick,FAST?100:800); return; } guideAuto(false); autoT=setTimeout(autoTick,FAST?150:2600); }
 let guideTitle='운전 따라하기';
+// 처음 상태 = 전원 OFF · 대기압 · 펌프 정지 · 밸브 모두 닫힘 (초록 버튼으로 전원 ON)
+function coldState(){ rotaryOn=false; setScreen(false); allValves(false); setFlow('rough',false); setFlow('fore',false); setFlow('vent',false); turboRpm=0; dcOn=rfOn=hvOn=false; processOn=false; setPlasma(false); setPlasma2(false); setGas(null); PSV.ar=PSV.n2=PSV.o2=0; AV.ar=AV.n2=AV.o2=AV.av4=false; tAtm=tGv=null; setPressure('ATM'); }
 function guideStart(mode){ autoAll=false; clearTimeout(autoT); mode=mode||'full'; GUIDE=GUIDES[mode]; guideTitle={full:'운전 따라하기',pump:'배기 순서 (직접 조작)',process:'공정 시연 — DC 스퍼터링 (직접 조작)',vent:'진공 파기 (직접 조작)'}[mode]; document.body.classList.add('guide'); guideOn=true; gi=0; select(null);
-  if(mode==='full'||mode==='pump'){ rotaryOn=false; setScreen(false); allValves(false); setFlow('rough',false); setFlow('fore',false); setFlow('vent',false); turboRpm=0; setGas(null); PSV.ar=PSV.n2=PSV.o2=0; AV.ar=AV.n2=AV.o2=AV.av4=false; tAtm=tGv=null; setPressure('ATM'); setDoor(false); }
+  if(mode==='full'||mode==='pump'){ coldState(); setDoor(false); }
   if(mode==='pump'){ setScreen(true); }
   if(mode==='process'){ setScreen(true); rotaryOn=true; turboRpm=33600; allValves(false); setValve('foreline_valve',true); setValve('gate_valve',true); setValve('throttle_valve',true); setFlow('fore',true); PSV.ar=PSV.n2=PSV.o2=0; AV.ar=AV.n2=AV.o2=AV.av4=false; setPressure('HIGH'); setDoor(false); setShutter(true); setPlasma(false); }
   if(mode==='vent'){ setScreen(true); if(pressureKey==='ATM'){toast('이미 대기압입니다 — 먼저 「배기 순서」');guideOn=false;document.body.classList.remove('guide');return;} }
@@ -1145,7 +1147,7 @@ document.querySelectorAll('#actions .btn').forEach(b=>b.onclick=()=>{const a=b.d
   if(a==='process'){ guideOn?guideStop():guideStart('process'); return; }
   if(a==='vent'){ guideOn?guideStop():guideStart('vent'); return; }
   if(a==='door')setDoor(!isDoorOpen()); else if(a==='cover')setCover(!COVERS.every(k=>OPEN[k].open)); else if(a==='explode')setExplode(!state.explode);
-  else {stopSeq=true;guideStop();setDoor(false);setCover(false);setExplode(false);select(null);setView('iso');setPlasma(false);setPlasma2(false);processOn=false;setShutter(false);setGas(null);setScreen(true);}});
+  else {stopSeq=true;guideStop();setDoor(false);setCover(false);setExplode(false);select(null);setView('iso');setPlasma(false);setPlasma2(false);processOn=false;setShutter(false);coldState();}});
 
 // =====================================================================
 // 부품 선택 · 설명
@@ -1221,7 +1223,7 @@ if(q.get('plasma')){plasmaMat.opacity=.42;}
 if(q.get('valves')){allValves(true);setFlow('rough',true);setFlow('fore',true);}
 if(q.get('notice')){document.getElementById('np').textContent=PTXT[pressure][0]; notice.classList.add('show');}
 if(q.get('guide')){guideStart(q.get('mode')||'full'); const st=parseInt(q.get('guide')||'0'); for(let k=0;k<st;k++)guideAuto(true);}
-setScreen(true);   // 처음 상태는 고진공 운전 중 → 모니터 켜짐
+if(!q.get('guide')&&!q.get('seq')&&!q.get('dc')&&!q.get('valves')&&!q.get('screen'))coldState();   // 처음 상태는 전원 OFF · 대기압 (10-10 JAKE)
 if(q.get('screen')){setScreen(true); openMonitor();}
 if(q.get('gas')){setGas(q.get('gas'));}
 if(q.get('seq')){const s=q.get('seq'); setTimeout(()=>{ if(s==='pump')doPump(); else if(s==='vent')doVent(); else if(s==='process')doProcess(); },300);}
